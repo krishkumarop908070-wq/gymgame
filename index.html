@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ICONIC FITNESS 3D - MOBILE & PC EDITION</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    body { overflow: hidden; background: #000; font-family: 'Segoe UI', system-ui, sans-serif; touch-action: none; }
+    #canvas-container { width: 100vw; height: 100vh; display: block; }
+    
+    /* Clean Cinematic Subtitle */
+    #subtitle-bar {
+      position: fixed;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      text-align: center;
+      width: 92%;
+      max-width: 960px;
+      z-index: 10;
+    }
+    .sub-speaker {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      padding: 2px 10px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    }
+    .sub-line {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      text-shadow: 0 0 8px #000, 0 2px 10px #000, 2px 2px 0 #000, -2px -2px 0 #000;
+      line-height: 1.3;
+    }
+
+    /* Grand Finale Victory Banner */
+    #finale-banner {
+      position: fixed;
+      top: 12%;
+      left: 50%;
+      transform: translateX(-50%) scale(0.8);
+      text-align: center;
+      pointer-events: none;
+      z-index: 20;
+      opacity: 0;
+      transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #finale-banner.show {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+    .finale-title {
+      font-size: 38px;
+      font-weight: 900;
+      color: #fef08a;
+      text-shadow: 0 0 20px #f59e0b, 0 4px 12px #000, 3px 3px 0 #000;
+    }
+    .finale-sub {
+      font-size: 16px;
+      font-weight: 800;
+      color: #10b981;
+      text-shadow: 0 2px 8px #000, 2px 2px 0 #000;
+      margin-top: 4px;
+    }
+
+    /* Mobile Touch Control Pads */
+    #mobile-controls {
+      position: fixed;
+      bottom: 15px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 15;
+      pointer-events: none;
+    }
+    .touch-group {
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    .t-btn {
+      background: rgba(15, 23, 42, 0.85);
+      border: 2px solid rgba(255,255,255,0.3);
+      color: #fff;
+      font-weight: 900;
+      font-size: 16px;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      cursor: pointer;
+      outline: none;
+    }
+    .t-btn:active { background: #10b981; color: #000; transform: scale(0.92); }
+    .action-pad .t-btn {
+      width: 65px;
+      background: rgba(16, 185, 129, 0.85);
+      font-size: 14px;
+    }
+    .action-pad .t-btn:nth-child(2) { background: rgba(59, 130, 246, 0.85); }
+    .action-pad .t-btn:nth-child(3) { background: rgba(239, 68, 68, 0.85); }
+  </style>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+
+  <div id="finale-banner">
+    <div class="finale-title">🏆 कृष भैया की जय! 🏆</div>
+    <div class="finale-sub">ICONIC FITNESS के असली किंग! (रीस्टार्ट के लिए R दबाएं)</div>
+  </div>
+
+  <div id="subtitle-bar">
+    <div id="subSpeaker" class="sub-speaker" style="background:#10b981; color:#000;">2. KRISH</div>
+    <div id="subText" class="sub-line">स्क्रीन पर क्लिक करें और W या नीचे दिए बटनों से जिम में प्रवेश करें!</div>
+  </div>
+
+  <!-- Mobile On-Screen Touch Buttons -->
+  <div id="mobile-controls">
+    <div class="touch-group">
+      <button class="t-btn" ontouchstart="setKey('a', true)" ontouchend="setKey('a', false)" onmousedown="setKey('a', true)" onmouseup="setKey('a', false)">◀</button>
+      <button class="t-btn" ontouchstart="setKey('w', true)" ontouchend="setKey('w', false)" onmousedown="setKey('w', true)" onmouseup="setKey('w', false)">▲</button>
+      <button class="t-btn" ontouchstart="setKey('s', true)" ontouchend="setKey('s', false)" onmousedown="setKey('s', true)" onmouseup="setKey('s', false)">▼</button>
+      <button class="t-btn" ontouchstart="setKey('d', true)" ontouchend="setKey('d', false)" onmousedown="setKey('d', true)" onmouseup="setKey('d', false)">▶</button>
+    </div>
+    <div class="touch-group action-pad">
+      <button class="t-btn" onclick="handleKeyOneDialogue()">[1] बात</button>
+      <button class="t-btn" onclick="handleKeyTwoWorkout()">[2] मशीन</button>
+      <button class="t-btn" onclick="handleKeyThreeFight()">[3] धक्का</button>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. VOICE & SOUND ENGINE (ZERO-CUTOFF SEQUENTIAL QUEUE)
+    // =========================================================================
+    let audioCtx = null;
+    function unlockAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('keydown', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+
+    function playSfx(type) {
+      unlockAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'clank') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.exponentialRampToValueAtTime(55, now + 0.18);
+        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
+        osc.start(now); osc.stop(now + 0.19);
+      } else if (type === 'punch') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(135, now);
+        osc.frequency.exponentialRampToValueAtTime(28, now + 0.24);
+        gain.gain.setValueAtTime(0.42, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.24);
+        osc.start(now); osc.stop(now + 0.25);
+      } else if (type === 'cheer') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(640, now + 0.35);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now); osc.stop(now + 0.36);
+      } else if (type === 'talk') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(330, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.08);
+        gain.gain.setValueAtTime(0.07, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now); osc.stop(now + 0.09);
+      }
+    }
+
+    let isChainPlaying = false;
+    let currentSpeakerChar = null;
+    let pollInterval = null;
+    window._activeUtterance = null;
+
+    function speakSingleLine(charObj, speakerTitle, badgeBg, badgeFg, text, pitch = 1.0, rate = 1.02, onDone = null) {
+      if (pollInterval) clearInterval(pollInterval);
+      currentSpeakerChar = charObj;
+
+      const spEl = document.getElementById('subSpeaker');
+      const txEl = document.getElementById('subText');
+      spEl.textContent = speakerTitle;
+      spEl.style.background = badgeBg;
+      spEl.style.color = badgeFg;
+      txEl.textContent = `"${text}"`;
+
+      if (charObj && charObj.setBubble) {
+        allCharacters.forEach(c => c.clearBubble && c.clearBubble());
+        charObj.setBubble(text);
+      }
+
+      playSfx('talk');
+
+      let lineDone = false;
+      const startTime = Date.now();
+      const minWaitMs = Math.max(2800, text.length * 85);
+      const maxSafetyMs = Math.max(11000, text.length * 160);
+
+      const finishUp = () => {
+        if (lineDone) return;
+        lineDone = true;
+        if (pollInterval) clearInterval(pollInterval);
+        currentSpeakerChar = null;
+        if (charObj && charObj.clearBubble) charObj.clearBubble();
+        setTimeout(() => { if (onDone) onDone(); }, 420);
+      };
+
+      let ttsStarted = false;
+      let ttsEnded = false;
+
+      if ('speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(text);
+          window._activeUtterance = utter;
+          utter.lang = 'hi-IN';
+          utter.pitch = pitch;
+          utter.rate = rate;
+
+          utter.onstart = () => { ttsStarted = true; };
+          utter.onend = () => { ttsEnded = true; finishUp(); };
+          utter.onerror = () => { ttsEnded = true; };
+
+          window.speechSynthesis.speak(utter);
+        } catch (e) {
+          ttsEnded = true;
+        }
+      }
+
+      pollInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const synthSpeaking = ('speechSynthesis' in window) && window.speechSynthesis.speaking;
+
+        if (ttsEnded && !synthSpeaking) {
+          finishUp();
+        } else if (!ttsStarted && !synthSpeaking && elapsed >= minWaitMs) {
+          finishUp();
+        } else if (elapsed >= maxSafetyMs) {
+          finishUp();
+        }
+      }, 150);
+    }
+
+    function playDialogueChain(chainArray, onChainComplete = null) {
+      if (isChainPlaying) return;
+      isChainPlaying = true;
+      let index = 0;
+
+      function nextStep() {
+        if (index >= chainArray.length) {
+          isChainPlaying = false;
+          if (onChainComplete) onChainComplete();
+          return;
+        }
+        const item = chainArray[index];
+        index++;
+        if (item.onStart) item.onStart();
+        speakSingleLine(item.char, item.title, item.bg, item.fg, item.text, item.pitch || 1.0, item.rate || 1.02, nextStep);
+      }
+      nextStep();
+    }
+
+    // =========================================================================
+    // 2. THREE.JS 3D WORLD & ICONIC FITNESS SIGNBOARD
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1120);
+    scene.fog = new THREE.Fog(0x0b1120, 35, 110);
+
+    const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 250);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+
+    const mainGymLight = new THREE.PointLight(0xfffbeb, 1.15, 65);
+    mainGymLight.position.set(0, 12, -8);
+    mainGymLight.castShadow = true;
+    scene.add(mainGymLight);
+
+    const neonAccent = new THREE.PointLight(0x10b981, 0.85, 35);
+    neonAccent.position.set(0, 9, 7);
+    scene.add(neonAccent);
+
+    const dirLight = new THREE.DirectionalLight(0xfef3c7, 0.75);
+    dirLight.position.set(18, 32, 24);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    // Outside Road
+    const road = new THREE.Mesh(
+      new THREE.PlaneGeometry(110, 110),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 })
+    );
+    road.rotation.x = -Math.PI / 2;
+    road.receiveShadow = true;
+    scene.add(road);
+
+    for (let i = -24; i <= 24; i += 8) {
+      const stripe = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.5, 0.45),
+        new THREE.MeshBasicMaterial({ color: 0xe2e8f0 })
+      );
+      stripe.rotation.x = -Math.PI / 2;
+      stripe.position.set(i, 0.02, 16);
+      scene.add(stripe);
+    }
+
+    // Gym Floor & Turf
+    const gymFloor = new THREE.Mesh(
+      new THREE.PlaneGeometry(36, 30),
+      new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.55 })
+    );
+    gymFloor.rotation.x = -Math.PI / 2;
+    gymFloor.position.set(0, 0.03, -8);
+    gymFloor.receiveShadow = true;
+    scene.add(gymFloor);
+
+    const turf = new THREE.Mesh(
+      new THREE.PlaneGeometry(5.5, 26),
+      new THREE.MeshStandardMaterial({ color: 0x065f46, roughness: 0.7 })
+    );
+    turf.rotation.x = -Math.PI / 2;
+    turf.position.set(0, 0.05, -8);
+    scene.add(turf);
+
+    // Gym Walls & Mirror
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(36, 11, 0.6), wallMat);
+    backWall.position.set(0, 5.5, -23);
+    scene.add(backWall);
+
+    const mirrorFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(28.4, 6.4, 0.15),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8 })
+    );
+    mirrorFrame.position.set(0, 4.6, -22.65);
+    scene.add(mirrorFrame);
+
+    const mirrorGlass = new THREE.Mesh(
+      new THREE.PlaneGeometry(28, 6),
+      new THREE.MeshStandardMaterial({ color: 0xbae6fd, metalness: 0.88, roughness: 0.12 })
+    );
+    mirrorGlass.position.set(0, 4.6, -22.55);
+    scene.add(mirrorGlass);
+
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 11, 30), wallMat);
+    leftWall.position.set(-18, 5.5, -8);
+    scene.add(leftWall);
+
+    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 11, 30), wallMat);
+    rightWall.position.set(18, 5.5, -8);
+    scene.add(rightWall);
+
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.25 });
+    const frontLeft = new THREE.Mesh(new THREE.BoxGeometry(12.5, 11, 0.4), glassMat);
+    frontLeft.position.set(-11.75, 5.5, 7);
+    scene.add(frontLeft);
+
+    const frontRight = new THREE.Mesh(new THREE.BoxGeometry(12.5, 11, 0.4), glassMat);
+    frontRight.position.set(11.75, 5.5, 7);
+    scene.add(frontRight);
+
+    // "ICONIC FITNESS" Board
+    function createIconicSignBoard() {
+      const cvs = document.createElement('canvas');
+      cvs.width = 1024; cvs.height = 256;
+      const ctx = cvs.getContext('2d');
+      ctx.fillStyle = '#064e3b';
+      ctx.fillRect(0, 0, 1024, 256);
+      ctx.lineWidth = 14;
+      ctx.strokeStyle = '#10b981';
+      ctx.strokeRect(10, 10, 1004, 236);
+      ctx.fillStyle = '#fef08a';
+      ctx.font = '900 108px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#10b981';
+      ctx.shadowBlur = 22;
+      ctx.fillText('ICONIC FITNESS', 512, 128);
+
+      const tex = new THREE.CanvasTexture(cvs);
+      const boardGeo = new THREE.BoxGeometry(16.5, 3.2, 0.9);
+      const sideMat = new THREE.MeshStandardMaterial({ color: 0x065f46 });
+      const faceMat = new THREE.MeshBasicMaterial({ map: tex });
+      const boardMesh = new THREE.Mesh(boardGeo, [sideMat, sideMat, sideMat, sideMat, faceMat, faceMat]);
+      boardMesh.position.set(0, 9.4, 7.25);
+      scene.add(boardMesh);
+    }
+    createIconicSignBoard();
+
+    const confettiParticles = [];
+    const confettiGroup = new THREE.Group();
+    confettiGroup.visible = false;
+    scene.add(confettiGroup);
+
+    const confColors = [0xfef08a, 0x10b981, 0x38bdf8, 0xf43f5e, 0xa855f7];
+    for (let i = 0; i < 120; i++) {
+      const cMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.22, 0.22, 0.05),
+        new THREE.MeshBasicMaterial({ color: confColors[i % confColors.length] })
+      );
+      cMesh.position.set((Math.random() - 0.5) * 18, Math.random() * 12 + 2, -6 + (Math.random() - 0.5) * 12);
+      confettiGroup.add(cMesh);
+      confettiParticles.push({ mesh: cMesh, speedY: 0.04 + Math.random() * 0.05, rotSpeed: Math.random() * 0.1 });
+    }
+
+    // =========================================================================
+    // 3. 5 WORKING 3D MACHINES
+    // =========================================================================
+    const machines = [];
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.85, roughness: 0.2 });
+    const darkSteelMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 });
+    const redPadMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 });
+    const bluePadMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4 });
+    const plateRedMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
+    const plateBlackMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+
+    function makeBarbellWithPlates() {
+      const barGrp = new THREE.Group();
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4.4, 16), steelMat);
+      shaft.rotation.z = Math.PI / 2;
+      barGrp.add(shaft);
+      [-1.85, -1.65, 1.65, 1.85].forEach((px, idx) => {
+        const radius = idx % 2 === 0 ? 0.65 : 0.52;
+        const pMat = idx % 2 === 0 ? plateRedMat : plateBlackMat;
+        const plate = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.14, 24), pMat);
+        plate.rotation.z = Math.PI / 2;
+        plate.position.x = px;
+        barGrp.add(plate);
+      });
+      return barGrp;
+    }
+
+    function makeDumbbellMesh() {
+      const db = new THREE.Group();
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.55, 12), steelMat);
+      handle.rotation.z = Math.PI / 2;
+      db.add(handle);
+      [-0.22, 0.22].forEach(px => {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.12, 16), plateBlackMat);
+        w.rotation.z = Math.PI / 2;
+        w.position.x = px;
+        db.add(w);
+      });
+      return db;
+    }
+
+    function buildFlatBenchPress(x, z) {
+      const grp = new THREE.Group();
+      const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.9, 0.3), darkSteelMat);
+      leg1.position.set(0, 0.45, 1.3);
+      const leg2 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 0.3), darkSteelMat);
+      leg2.position.set(0, 0.45, -1.1);
+      grp.add(leg1, leg2);
+      const pad = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.22, 3.4), redPadMat);
+      pad.position.set(0, 0.95, 0.1);
+      grp.add(pad);
+      [-0.85, 0.85].forEach(px => {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.3, 0.16), steelMat);
+        post.position.set(px, 1.15, -1.15);
+        grp.add(post);
+      });
+      const movingBar = makeBarbellWithPlates();
+      movingBar.position.set(0, 2.15, -0.75);
+      grp.add(movingBar);
+      grp.position.set(x, 0, z);
+      scene.add(grp);
+      machines.push({ id: 1, name: "Flat Chest Bench Press", type: "bench", group: grp, movingPart: movingBar, baseY: 2.15, x, z });
+    }
+
+    function buildLegPressMachine(x, z) {
+      const grp = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.2, 4.2), darkSteelMat);
+      base.position.set(0, 0.1, 0);
+      grp.add(base);
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.22, 1.2), bluePadMat);
+      seat.position.set(0, 0.55, 1.2);
+      const backrest = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.5, 0.25), bluePadMat);
+      backrest.position.set(0, 1.0, 1.75);
+      backrest.rotation.x = 0.45;
+      grp.add(seat, backrest);
+      [-0.65, 0.65].forEach(px => {
+        const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.6, 12), steelMat);
+        rail.position.set(px, 1.5, -0.5);
+        rail.rotation.x = Math.PI / 4;
+        grp.add(rail);
+      });
+      const sled = new THREE.Group();
+      const footplate = new THREE.Mesh(new THREE.BoxGeometry(1.65, 1.3, 0.18), darkSteelMat);
+      footplate.rotation.x = Math.PI / 4;
+      sled.add(footplate);
+      [-1.05, 1.05].forEach(px => {
+        const horn = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6, 12), steelMat);
+        horn.rotation.z = Math.PI / 2;
+        horn.position.set(px, 0.2, -0.1);
+        sled.add(horn);
+        const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.18, 24), plateRedMat);
+        plate.rotation.z = Math.PI / 2;
+        plate.position.set(px, 0.2, -0.1);
+        sled.add(plate);
+      });
+      sled.position.set(0, 1.55, -0.45);
+      grp.add(sled);
+      grp.position.set(x, 0, z);
+      scene.add(grp);
+      machines.push({ id: 2, name: "45° Heavy Leg Press", type: "legpress", group: grp, movingPart: sled, baseY: 1.55, baseZ: -0.45, x, z });
+    }
+
+    function buildDumbbellStation(x, z) {
+      const grp = new THREE.Group();
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.6, 1.0), darkSteelMat);
+      legL.position.set(-2.2, 0.8, -1.2);
+      const legR = legL.clone();
+      legR.position.set(2.2, 0.8, -1.2);
+      const shelf1 = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.12, 0.9), darkSteelMat);
+      shelf1.position.set(0, 1.45, -1.2);
+      const shelf2 = shelf1.clone();
+      shelf2.position.set(0, 0.85, -1.2);
+      grp.add(legL, legR, shelf1, shelf2);
+      const rackDbGroup = new THREE.Group();
+      for (let i = -1.6; i <= 1.6; i += 0.8) {
+        const db1 = makeDumbbellMesh();
+        db1.position.set(i, 1.65, -1.2);
+        db1.rotation.y = Math.PI / 2;
+        const db2 = makeDumbbellMesh();
+        db2.position.set(i, 1.05, -1.2);
+        db2.rotation.y = Math.PI / 2;
+        rackDbGroup.add(db1, db2);
+      }
+      grp.add(rackDbGroup);
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.25, 1.8), redPadMat);
+      seat.position.set(0, 0.85, 0.8);
+      const seatBase = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 1.4), darkSteelMat);
+      seatBase.position.set(0, 0.4, 0.8);
+      grp.add(seat, seatBase);
+      grp.position.set(x, 0, z);
+      scene.add(grp);
+      machines.push({ id: 3, name: "Heavy Dumbbell Rack", type: "dumbbell", group: grp, movingPart: rackDbGroup, x, z });
+    }
+
+    function buildLatPulldown(x, z) {
+      const grp = new THREE.Group();
+      [-0.5, 0.5].forEach(px => {
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.14, 4.6, 0.14), steelMat);
+        pillar.position.set(px, 2.3, -1.1);
+        grp.add(pillar);
+      });
+      const topBeam = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.2, 2.2), darkSteelMat);
+      topBeam.position.set(0, 4.6, -0.3);
+      grp.add(topBeam);
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.2, 1.2), bluePadMat);
+      seat.position.set(0, 0.9, 0.4);
+      const seatPost = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.9, 0.3), darkSteelMat);
+      seatPost.position.set(0, 0.45, 0.4);
+      grp.add(seat, seatPost);
+      const movingAssembly = new THREE.Group();
+      const latBar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 12), steelMat);
+      latBar.rotation.z = Math.PI / 2;
+      latBar.position.set(0, 3.2, 0.4);
+      movingAssembly.add(latBar);
+      const weightPlateStack = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.9, 0.4), plateRedMat);
+      weightPlateStack.position.set(0, 1.2, -1.1);
+      movingAssembly.add(weightPlateStack);
+      grp.add(movingAssembly);
+      grp.position.set(x, 0, z);
+      scene.add(grp);
+      machines.push({ id: 4, name: "Lat Pulldown Machine", type: "latpull", group: grp, movingPart: movingAssembly, latBar, weightPlateStack, x, z });
+    }
+
+    function buildSquatCage(x, z) {
+      const grp = new THREE.Group();
+      const yellowSteel = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.5, roughness: 0.3 });
+      [-1.3, 1.3].forEach(px => {
+        [-1.1, 1.1].forEach(pz => {
+          const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 4.8, 0.18), yellowSteel);
+          post.position.set(px, 2.4, pz);
+          grp.add(post);
+        });
+      });
+      const movingBar = makeBarbellWithPlates();
+      movingBar.position.set(0, 2.85, 0);
+      grp.add(movingBar);
+      grp.position.set(x, 0, z);
+      scene.add(grp);
+      machines.push({ id: 5, name: "Olympic Squat Rack", type: "squat", group: grp, movingPart: movingBar, baseY: 2.85, x, z });
+    }
+
+    buildFlatBenchPress(-10.5, -5.5);
+    buildLegPressMachine(10.5, -5.5);
+    buildDumbbellStation(-10.5, -16.0);
+    buildLatPulldown(10.5, -16.0);
+    buildSquatCage(0, -17.5);
+
+    // =========================================================================
+    // 4. 5 CHARACTERS
+    // =========================================================================
+    const allCharacters = [];
+
+    function createArticulatedCharacter(nameLabel, shirtHex, skinHex, pantsHex, bodyScale = 1.0) {
+      const root = new THREE.Group();
+      const bodyPivot = new THREE.Group();
+      root.add(bodyPivot);
+
+      const skinMat = new THREE.MeshStandardMaterial({ color: skinHex, roughness: 0.45 });
+      const shirtMat = new THREE.MeshStandardMaterial({ color: shirtHex, roughness: 0.5 });
+      const pantsMat = new THREE.MeshStandardMaterial({ color: pantsHex, roughness: 0.6 });
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(1.18 * bodyScale, 1.45, 0.65 * bodyScale), shirtMat);
+      torso.position.y = 2.15;
+      torso.castShadow = true;
+      bodyPivot.add(torso);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.44, 20, 20), skinMat);
+      head.position.y = 3.3;
+      bodyPivot.add(head);
+
+      [-0.15, 0.15].forEach(ex => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), hairMat);
+        eye.position.set(ex, 3.35, 0.38);
+        bodyPivot.add(eye);
+      });
+
+      const hair = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.35, 16), hairMat);
+      hair.position.y = 3.62;
+      bodyPivot.add(hair);
+
+      const leftArm = new THREE.Group();
+      const lArmMesh = new THREE.Mesh(new THREE.BoxGeometry(0.36 * bodyScale, 1.25, 0.36 * bodyScale), skinMat);
+      lArmMesh.position.y = -0.52;
+      leftArm.add(lArmMesh);
+      const leftDb = makeDumbbellMesh();
+      leftDb.position.set(0, -1.1, 0.1);
+      leftDb.visible = false;
+      leftArm.add(leftDb);
+      leftArm.position.set(-0.82 * bodyScale, 2.75, 0);
+      bodyPivot.add(leftArm);
+
+      const rightArm = new THREE.Group();
+      const rArmMesh = new THREE.Mesh(new THREE.BoxGeometry(0.36 * bodyScale, 1.25, 0.36 * bodyScale), skinMat);
+      rArmMesh.position.y = -0.52;
+      rightArm.add(rArmMesh);
+      const rightDb = makeDumbbellMesh();
+      rightDb.position.set(0, -1.1, 0.1);
+      rightDb.visible = false;
+      rightArm.add(rightDb);
+      rightArm.position.set(0.82 * bodyScale, 2.75, 0);
+      bodyPivot.add(rightArm);
+
+      const leftLeg = new THREE.Group();
+      const lLegMesh = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.35, 0.42), pantsMat);
+      lLegMesh.position.y = -0.65;
+      leftLeg.add(lLegMesh);
+      leftLeg.position.set(-0.32, 1.4, 0);
+      bodyPivot.add(leftLeg);
+
+      const rightLeg = new THREE.Group();
+      const rLegMesh = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.35, 0.42), pantsMat);
+      rLegMesh.position.y = -0.65;
+      rightLeg.add(rLegMesh);
+      rightLeg.position.set(0.32, 1.4, 0);
+      bodyPivot.add(rightLeg);
+
+      const nameCvs = document.createElement('canvas');
+      nameCvs.width = 512; nameCvs.height = 96;
+      const nCtx = nameCvs.getContext('2d');
+      nCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      nCtx.fillRect(30, 12, 452, 72);
+      nCtx.strokeStyle = '#38bdf8';
+      nCtx.lineWidth = 5;
+      nCtx.strokeRect(30, 12, 452, 72);
+      nCtx.fillStyle = '#ffffff';
+      nCtx.font = 'bold 42px "Segoe UI", sans-serif';
+      nCtx.textAlign = 'center';
+      nCtx.textBaseline = 'middle';
+      nCtx.fillText(nameLabel, 256, 48);
+
+      const nameTex = new THREE.CanvasTexture(nameCvs);
+      const nameSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: nameTex }));
+      nameSprite.scale.set(3.5, 0.68, 1);
+      nameSprite.position.set(0, 4.45, 0);
+      root.add(nameSprite);
+
+      const bubCvs = document.createElement('canvas');
+      bubCvs.width = 768; bubCvs.height = 160;
+      const bCtx = bubCvs.getContext('2d');
+      const bubTex = new THREE.CanvasTexture(bubCvs);
+      const bubSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubTex, transparent: true }));
+      bubSprite.scale.set(5.6, 1.15, 1);
+      bubSprite.position.set(0, 5.45, 0);
+      bubSprite.visible = false;
+      root.add(bubSprite);
+
+      function setBubble(msg) {
+        bCtx.clearRect(0, 0, 768, 160);
+        bCtx.fillStyle = '#fef08a';
+        bCtx.fillRect(12, 12, 744, 126);
+        bCtx.strokeStyle = '#0f172a';
+        bCtx.lineWidth = 8;
+        bCtx.strokeRect(12, 12, 744, 126);
+        bCtx.fillStyle = '#0f172a';
+        bCtx.font = 'bold 34px "Segoe UI", sans-serif';
+        bCtx.textAlign = 'center';
+        bCtx.textBaseline = 'middle';
+        const shortMsg = msg.length > 42 ? msg.slice(0, 40) + '...' : msg;
+        bCtx.fillText(shortMsg, 384, 75);
+        bubTex.needsUpdate = true;
+        bubSprite.visible = true;
+      }
+
+      function clearBubble() {
+        bubSprite.visible = false;
+      }
+
+      scene.add(root);
+
+      const charObj = {
+        name: nameLabel, root, bodyPivot, torso, head, leftArm, rightArm, leftLeg, rightLeg, leftDb, rightDb, setBubble, clearBubble, mode: 'idle', targetPos: null
+      };
+      allCharacters.push(charObj);
+      return charObj;
+    }
+
+    const shubham = createArticulatedCharacter("1. Shubham Trainer", 0x8b5cf6, 0xfde047, 0x1e293b, 1.25);
+    shubham.root.position.set(0, 0, -2.5);
+
+    const gainerTub = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.28, 0.28, 0.65, 16),
+      new THREE.MeshStandardMaterial({ color: 0xa855f7 })
+    );
+    gainerTub.position.set(0, -1.05, 0.2);
+    gainerTub.visible = false;
+    shubham.rightArm.add(gainerTub);
+
+    const krish = createArticulatedCharacter("2. Krish", 0x10b981, 0xfbbf24, 0x0f172a, 1.08);
+    krish.root.position.set(0, 0, 15.5);
+    krish.root.rotation.y = Math.PI;
+
+    const aman = createArticulatedCharacter("3. Aman", 0x0ea5e9, 0xfbbf24, 0x1e293b, 1.05);
+    aman.root.position.set(-5.5, 0, 22);
+
+    const gudu = createArticulatedCharacter("4. Gudu Don", 0xef4444, 0xf59e0b, 0x090d16, 1.18);
+    gudu.root.position.set(5.5, 0, 22);
+
+    const miki = createArticulatedCharacter("5. Miki Mouse", 0xf97316, 0xfde047, 0x334155, 0.78);
+    miki.root.position.set(3.5, 0, 20);
+
+    function resetPosture(c) {
+      c.mode = 'idle';
+      c.bodyPivot.position.set(0, 0, 0);
+      c.bodyPivot.rotation.set(0, 0, 0);
+      c.leftArm.rotation.set(0, 0, 0);
+      c.rightArm.rotation.set(0, 0, 0);
+      c.leftLeg.rotation.set(0, 0, 0);
+      c.rightLeg.rotation.set(0, 0, 0);
+      c.leftDb.visible = false;
+      c.rightDb.visible = false;
+    }
+
+    function assignToMachine(charObj, machineObj) {
+      resetPosture(charObj);
+      charObj.targetPos = null;
+      charObj.root.position.set(machineObj.x, 0, machineObj.z);
+      charObj.root.rotation.y = 0;
+
+      if (machineObj.type === 'bench') {
+        charObj.mode = 'bench';
+        charObj.bodyPivot.position.set(0, 1.15, 1.25);
+        charObj.bodyPivot.rotation.x = -Math.PI / 2;
+      } else if (machineObj.type === 'legpress') {
+        charObj.mode = 'legpress';
+        charObj.bodyPivot.position.set(0, -0.35, 1.25);
+        charObj.bodyPivot.rotation.x = -0.35;
+      } else if (machineObj.type === 'dumbbell') {
+        charObj.mode = 'dumbbell';
+        charObj.root.position.set(machineObj.x, 0, machineObj.z + 1.4);
+        charObj.leftDb.visible = true;
+        charObj.rightDb.visible = true;
+      } else if (machineObj.type === 'latpull') {
+        charObj.mode = 'latpull';
+        charObj.bodyPivot.position.set(0, -0.35, 0.45);
+      } else if (machineObj.type === 'squat') {
+        charObj.mode = 'squat';
+        charObj.root.position.set(machineObj.x, 0, machineObj.z + 0.2);
+      }
+    }
+
+    function faceEachOther(c1, c2) {
+      const dx = c2.root.position.x - c1.root.position.x;
+      const dz = c2.root.position.z - c1.root.position.z;
+      c1.root.rotation.y = Math.atan2(dx, dz);
+      c2.root.rotation.y = Math.atan2(-dx, -dz);
+    }
+
+    function pumpKrishBody(sets) {
+      const scaleW = Math.min(1.85, 1.08 + sets * 0.14);
+      const scaleH = Math.min(1.32, 1.0 + sets * 0.05);
+      krish.torso.scale.set(scaleW, scaleH, scaleW);
+      krish.leftArm.scale.setScalar(scaleW);
+      krish.rightArm.scale.setScalar(scaleW);
+      krish.leftArm.position.x = -0.78 * scaleW;
+      krish.rightArm.position.x = 0.78 * scaleW;
+    }
+
+    // =========================================================================
+    // 5. STORYLINE & GRAND FINALE
+    // =========================================================================
+    let hasEnteredGym = false;
+    let storyBeat = 0;
+    let krishSetsCount = 0;
+    let isGameCompleted = false;
+
+    function triggerGrandFinaleClimax() {
+      if (isGameCompleted) return;
+      isGameCompleted = true;
+      gainerTub.visible = false;
+
+      pumpKrishBody(6);
+
+      allCharacters.forEach(c => resetPosture(c));
+      krish.root.position.set(0, 0, -5.5);
+      krish.root.rotation.y = 0;
+      krish.mode = 'flex';
+
+      shubham.root.position.set(-3.2, 0, -2.2);
+      aman.root.position.set(-1.2, 0, -1.5);
+      gudu.root.position.set(1.2, 0, -1.5);
+      miki.root.position.set(3.2, 0, -2.2);
+
+      [shubham, aman, gudu, miki].forEach(c => {
+        c.root.rotation.y = Math.atan2(krish.root.position.x - c.root.position.x, krish.root.position.z - c.root.position.z);
+        c.mode = 'cheer';
+      });
+
+      confettiGroup.visible = true;
+      playSfx('cheer');
+
+      playDialogueChain([
+        {
+          char: krish, title: "2. KRISH (KING)", bg: "#10b981", fg: "#000", pitch: 0.95,
+          text: "देख लो बे सब के सब! बिना इंजेक्शन और बिना 4500 के नकली मास गेनर के, असली मेहनत से ऐसी फौलादी बॉडी बनती है!"
+        },
+        {
+          char: shubham, title: "1. SHUBHAM TRAINER", bg: "#8b5cf6", fg: "#fff", pitch: 0.85,
+          text: "मुझे माफ कर दो कृष भैया! मैंने आज ही नकली सप्लीमेंट फेंक दिया! आज से Iconic Fitness के असली उस्ताद आप हो!"
+        },
+        {
+          char: aman, title: "3. AMAN", bg: "#0ea5e9", fg: "#000", pitch: 1.15,
+          text: "अरे गुड्डू भाई देखो कृष भैया के बाइसेप्स! ऐसी तगड़ी बॉडी तो पूरे शहर में किसी की नहीं है!"
+        },
+        {
+          char: gudu, title: "4. GUDU DON", bg: "#ef4444", fg: "#fff", pitch: 0.75,
+          text: "आज से गुड्डू डॉन भी कृष भैया का फैन हो गया! सब हाथ उठा के जोर से बोलो, कृष भैया की जय!"
+        },
+        {
+          char: miki, title: "ALL: SHUBHAM, AMAN, GUDU & MIKI", bg: "#fef08a", fg: "#000", pitch: 1.1,
+          onStart: () => {
+            playSfx('cheer');
+            document.getElementById('finale-banner').classList.add('show');
+          },
+          text: "कृष भैया की जय! ICONIC FITNESS के असली किंग कृष भैया की जय हो!"
+        }
+      ]);
+    }
+
+    const storyExchangeScript = [
+      {
+        chains: [
+          {
+            char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 1.0,
+            onStart: () => { resetPosture(krish); resetPosture(shubham); faceEachOther(krish, shubham); },
+            text: "तो भड़वे फ्री में थोड़ी आया हूँ! पूरे महीने की कड़क फीस गिन के दिया हूँ!"
+          },
+          {
+            char: shubham, title: "1. SHUBHAM TRAINER", bg: "#8b5cf6", fg: "#fff", pitch: 0.85,
+            onStart: () => faceEachOther(shubham, krish),
+            text: "अरे गुस्सा क्यों करता है मेरे भाई! बस छह महीना रुक जा, तेरी ऐसी तगड़ी बॉडी बना दूंगा कि पूरी कॉलोनी देखेगी!"
+          }
+        ]
+      },
+      {
+        chains: [
+          {
+            char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 1.0,
+            onStart: () => faceEachOther(krish, shubham),
+            text: "चल चल निकल! पिछले साल से यही छह महीने वाली स्कीम सुना के सबको चूना लगा रहा है!"
+          },
+          {
+            char: shubham, title: "1. SHUBHAM TRAINER", bg: "#8b5cf6", fg: "#fff", pitch: 0.85,
+            onStart: () => { shubham.targetPos = { x: 1.5, z: 11 }; },
+            text: "अच्छा तू रुक, मैं बाहर सड़क से नए लड़के मिकी माउस को पकड़ के अंदर लाता हूँ!"
+          },
+          {
+            char: miki, title: "5. MIKI MOUSE", bg: "#f97316", fg: "#fff", pitch: 1.35,
+            onStart: () => {
+              shubham.targetPos = { x: -2.0, z: -2.0 };
+              miki.targetPos = { x: 2.0, z: -2.0 };
+              faceEachOther(shubham, miki);
+            },
+            text: "शुभम ट्रेनर भैया! आपने वादा किया है ना कि छह महीने में मेरी सलमान खान जैसी तगड़ी चेस्ट निकल आएगी?"
+          }
+        ]
+      },
+      {
+        chains: [
+          {
+            char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 1.0,
+            onStart: () => {
+              resetPosture(krish); resetPosture(miki);
+              krish.root.position.set(0, 0, 0.5);
+              faceEachOther(krish, miki);
+            },
+            text: "अबे ओ मिकी माउस! किस चक्कर में पड़ गया भाई? ये ट्रेनर तुझे सलमान खान नहीं, नकली सत्तू बेच के कंगाल बना देगा!"
+          },
+          {
+            char: miki, title: "5. MIKI MOUSE", bg: "#f97316", fg: "#fff", pitch: 1.35,
+            text: "हैं?! कृष भैया डराओ मत यार! अरे देखो, पीछे से अमन और गुड्डू डॉन भी जिम के अंदर आ गए!"
+          },
+          {
+            char: aman, title: "3. AMAN", bg: "#0ea5e9", fg: "#000", pitch: 1.15,
+            onStart: () => {
+              assignToMachine(miki, machines[2]);
+              assignToMachine(aman, machines[0]);
+              assignToMachine(gudu, machines[1]);
+            },
+            text: "ओए गुड्डू डॉन! आज बेंच प्रेस और लेग प्रेस दोनों मशीनों पर अपना कब्जा रहेगा, किसी को पास मत भटकने देना!"
+          },
+          {
+            char: gudu, title: "4. GUDU DON", bg: "#ef4444", fg: "#fff", pitch: 0.72,
+            text: "बिल्कुल अमन भाई! जो हमारे बीच में आएगा, गुड्डू डॉन उसका डंबल बना देगा!"
+          }
+        ]
+      },
+      {
+        chains: [
+          {
+            char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 1.0,
+            onStart: () => {
+              resetPosture(krish); resetPosture(aman);
+              krish.root.position.set(-7.2, 0, -5.5);
+              aman.root.position.set(-9.5, 0, -5.5);
+              faceEachOther(krish, aman);
+            },
+            text: "अबे तुझे यहीं मारना है क्या? जब देखो मेरी बेंच प्रेस मशीन घेर के पसर जाता है!"
+          },
+          {
+            char: aman, title: "3. AMAN", bg: "#0ea5e9", fg: "#000", pitch: 1.15,
+            text: "हाँ थू! यहीं मारूंगा भाई! अभी मेरे दस सेट बाकी हैं, और ज्यादा गर्मी है तो धक्का मार के दिखा!"
+          },
+          {
+            char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 1.0,
+            onStart: () => assignToMachine(aman, machines[3]),
+            text: "अबे पंद्रह किलो की रॉड तुझसे हिल नहीं रही और दस सेट मारेगा? चल साइड हट!"
+          }
+        ]
+      },
+      {
+        chains: [
+          {
+            char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 1.0,
+            onStart: () => {
+              resetPosture(krish); resetPosture(gudu);
+              krish.root.position.set(7.2, 0, -5.5);
+              gudu.root.position.set(9.5, 0, -5.5);
+              faceEachOther(krish, gudu);
+            },
+            text: "अबे ओ गुड्डू डॉन! तुझे भी यहीं मारना है? लेग प्रेस पे बैठ के रील्स देख रहा है या कसरत?"
+          },
+          {
+            char: gudu, title: "4. GUDU DON", bg: "#ef4444", fg: "#fff", pitch: 0.72,
+            text: "हाँ थू! गुड्डू डॉन अपने हिसाब से सेट मारता है! पर तेरा पंप देख के मैं खुद साइड हट रहा हूँ!"
+          }
+        ],
+        onBeatDone: () => {
+          assignToMachine(gudu, machines[4]);
+        }
+      },
+      {
+        chains: [
+          {
+            char: shubham, title: "1. SHUBHAM TRAINER", bg: "#8b5cf6", fg: "#fff", pitch: 0.85,
+            onStart: () => {
+              allCharacters.forEach(c => resetPosture(c));
+              krish.root.position.set(-2.2, 0, -6.0);
+              shubham.root.position.set(2.2, 0, -6.0);
+              aman.root.position.set(3.2, 0, -8.2);
+              gudu.root.position.set(3.2, 0, -3.8);
+              miki.root.position.set(-3.0, 0, -8.2);
+              faceEachOther(krish, shubham);
+              gainerTub.visible = true;
+            },
+            text: "ओए कृष! तूने आज तगड़े सेट मारे हैं! ले भाई मेरा ये 4500 वाला स्पेशल मास गेनर ले ले!"
+          },
+          {
+            char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 0.95,
+            text: "भड़वे तूने तो खुद इंजेक्शन लेकर बॉडी बनाई है और मुझे यह चिपका रहा है! चल निकल!"
+          },
+          {
+            char: shubham, title: "1. SHUBHAM TRAINER", bg: "#8b5cf6", fg: "#fff", pitch: 0.85,
+            text: "अरे बाप रे! कृष भाई ने तो सबके सामने मेरी पोल खोल दी!"
+          }
+        ],
+        onBeatDone: () => {
+          triggerGrandFinaleClimax();
+        }
+      }
+    ];
+
+    const heatedFightScripts = [
+      {
+        target: () => aman,
+        lines: [
+          { char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 1.0, text: "हट पीछे अमन के बच्चे! सुबह से बेंच पर तौलिया रख के कब्जा कर रखा है!" },
+          { char: aman, title: "3. AMAN", bg: "#0ea5e9", fg: "#000", pitch: 1.18, text: "अरे ओए कृष! धक्का क्यों मार रहा है यार, मेरी प्रोटीन शेक की बोतल गिर गई!" },
+          { char: gudu, title: "4. GUDU DON", bg: "#ef4444", fg: "#fff", pitch: 0.72, text: "अबे अमन चुपचाप पीछे हो जा, कृष का पंप देख रहा है? हम दोनों को बाहर फेंक देगा!" },
+          { char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 0.98, text: "समझ में आया ना! अब चुपचाप कोने में खड़े होकर देख कैसे सेट लगाते हैं!" }
+        ]
+      },
+      {
+        target: () => gudu,
+        lines: [
+          { char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 1.0, text: "चल हट पीछे गुड्डू डॉन! नाम डॉन रखा है और वेट उठाते टाइम बकरी जैसी आवाज निकालता है!" },
+          { char: gudu, title: "4. GUDU DON", bg: "#ef4444", fg: "#fff", pitch: 0.72, text: "ओए कृष! कॉलर पर हाथ मत डाल! आज मेरी कमर में मोच है वरना अभी अखाड़ा बना देता!" },
+          { char: miki, title: "5. MIKI MOUSE", bg: "#f97316", fg: "#fff", pitch: 1.38, text: "हाहाहा! कृष भैया ने तो एक ही धक्के में गुड्डू डॉन की सारी हवा निकाल दी!" },
+          { char: gudu, title: "4. GUDU DON", bg: "#ef4444", fg: "#fff", pitch: 0.72, text: "अबे चुप कर मिकी! कृष भाई, आज से ये मशीन तेरी है!" }
+        ]
+      },
+      {
+        target: () => shubham,
+        lines: [
+          { char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 1.0, text: "हट परे शुभम ट्रेनर! जब देखो हाथ में सत्तू का डब्बा लेकर भिनभिनाता रहता है!" },
+          { char: shubham, title: "1. SHUBHAM TRAINER", bg: "#8b5cf6", fg: "#fff", pitch: 0.85, text: "अरे कृष भाई! जिम के ट्रेनर को ही धक्का मार दिया! अमन, गुड्डू, बचाओ यार!" },
+          { char: aman, title: "3. AMAN", bg: "#0ea5e9", fg: "#000", pitch: 1.15, text: "ट्रेनर भैया हम बीच में नहीं आएंगे, और मारो कृष भाई!" },
+          { char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 0.96, text: "दुबारा मेरे सामने नकली सप्लीमेंट लाया ना, तो सीधा जिम के बोर्ड के ऊपर टांग दूंगा!" }
+        ]
+      }
+    ];
+
+    let fightRoundCounter = 0;
+
+    // =========================================================================
+    // 6. CONTROLS (PC KEYS + MOBILE BUTTONS)
+    // =========================================================================
+    const keys = {};
+    function setKey(k, isDown) {
+      keys[k] = isDown;
+    }
+
+    window.addEventListener('keydown', e => {
+      const k = e.key.toLowerCase();
+      keys[k] = true;
+      if (e.key === '1') handleKeyOneDialogue();
+      else if (e.key === '2') handleKeyTwoWorkout();
+      else if (e.key === '3') handleKeyThreeFight();
+      else if (k === 'r') restartFullGame();
+    });
+    window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+    function handleKeyOneDialogue() {
+      if (isChainPlaying) return;
+      if (!hasEnteredGym) {
+        hasEnteredGym = true;
+        krish.root.position.set(0, 0, 2.5);
+        faceEachOther(shubham, krish);
+        playDialogueChain([{ char: shubham, title: "1. SHUBHAM TRAINER", bg: "#8b5cf6", fg: "#fff", pitch: 0.85, text: "सुबह-सुबह आ गया! (बात आगे बढ़ाने के लिए फिर 1 दबाएं)" }]);
+        return;
+      }
+      if (storyBeat < storyExchangeScript.length) {
+        const beat = storyExchangeScript[storyBeat];
+        storyBeat++;
+        playDialogueChain(beat.chains, beat.onBeatDone || null);
+      } else {
+        triggerGrandFinaleClimax();
+      }
+    }
+
+    function handleKeyTwoWorkout() {
+      if (isChainPlaying) return;
+      hasEnteredGym = true;
+      let nearestM = machines[0];
+      let minDist = 999;
+      machines.forEach(m => {
+        const d = Math.hypot(krish.root.position.x - m.x, krish.root.position.z - m.z);
+        if (d < minDist) { minDist = d; nearestM = m; }
+      });
+
+      allCharacters.forEach(c => {
+        if (c !== krish && Math.hypot(c.root.position.x - nearestM.x, c.root.position.z - nearestM.z) < 2.2) {
+          resetPosture(c);
+          c.root.position.x += 2.8;
+        }
+      });
+
+      playSfx('clank');
+      assignToMachine(krish, nearestM);
+      krishSetsCount++;
+      pumpKrishBody(krishSetsCount);
+
+      playDialogueChain([
+        { char: krish, title: "2. KRISH", bg: "#10b981", fg: "#000", pitch: 1.0, text: `${nearestM.name} पर तगड़ा सेट मार रहा हूँ! (${krishSetsCount}/3 सेट)` }
+      ], () => {
+        if (krishSetsCount >= 3 && !isGameCompleted) {
+          storyBeat = storyExchangeScript.length;
+          const finalBeat = storyExchangeScript[storyExchangeScript.length - 1];
+          playDialogueChain(finalBeat.chains, finalBeat.onBeatDone);
+        }
+      });
+    }
+
+    function handleKeyThreeFight() {
+      if (isChainPlaying) return;
+      hasEnteredGym = true;
+      resetPosture(krish);
+
+      const scriptObj = heatedFightScripts[fightRoundCounter % heatedFightScripts.length];
+      fightRoundCounter++;
+      const targetChar = scriptObj.target();
+      resetPosture(targetChar);
+
+      const angle = Math.atan2(targetChar.root.position.x - krish.root.position.x, targetChar.root.position.z - krish.root.position.z);
+      krish.root.position.x = targetChar.root.position.x - Math.sin(angle) * 1.9;
+      krish.root.position.z = targetChar.root.position.z - Math.cos(angle) * 1.9;
+
+      faceEachOther(krish, targetChar);
+      playSfx('punch');
+
+      krish.rightArm.rotation.x = -Math.PI / 1.35;
+      krish.leftArm.rotation.x = -Math.PI / 1.35;
+      setTimeout(() => { krish.rightArm.rotation.x = 0; krish.leftArm.rotation.x = 0; }, 450);
+
+      targetChar.root.position.x = Math.max(-15, Math.min(15, targetChar.root.position.x + Math.sin(angle) * 2.8));
+      targetChar.root.position.z = Math.max(-20, Math.min(5, targetChar.root.position.z + Math.cos(angle) * 2.8));
+
+      playDialogueChain(scriptObj.lines);
+    }
+
+    function restartFullGame() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      isChainPlaying = false;
+      hasEnteredGym = false;
+      storyBeat = 0;
+      krishSetsCount = 0;
+      isGameCompleted = false;
+      confettiGroup.visible = false;
+      gainerTub.visible = false;
+      document.getElementById('finale-banner').classList.remove('show');
+
+      krish.torso.scale.set(1, 1, 1);
+      krish.leftArm.scale.setScalar(1);
+      krish.rightArm.scale.setScalar(1);
+      krish.leftArm.position.x = -0.82 * 1.08;
+      krish.rightArm.position.x = 0.82 * 1.08;
+
+      allCharacters.forEach(c => resetPosture(c));
+      shubham.root.position.set(0, 0, -2.5);
+      krish.root.position.set(0, 0, 15.5);
+      krish.root.rotation.y = Math.PI;
+      aman.root.position.set(-5.5, 0, 22);
+      gudu.root.position.set(5.5, 0, 22);
+      miki.root.position.set(3.5, 0, 20);
+    }
+
+    // =========================================================================
+    // 7. ANIMATION LOOP
+    // =========================================================================
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+      const moveSpeed = 0.19;
+      let playerMoved = false;
+
+      if (!isGameCompleted) {
+        if (keys['w'] || keys['s'] || keys['a'] || keys['d']) {
+          if (krish.mode !== 'idle' && krish.mode !== 'walk') resetPosture(krish);
+        }
+        if (keys['w']) { krish.root.position.z -= moveSpeed; krish.root.rotation.y = Math.PI; playerMoved = true; }
+        if (keys['s']) { krish.root.position.z += moveSpeed; krish.root.rotation.y = 0; playerMoved = true; }
+        if (keys['a']) { krish.root.position.x -= moveSpeed; krish.root.rotation.y = -Math.PI / 2; playerMoved = true; }
+        if (keys['d']) { krish.root.position.x += moveSpeed; krish.root.rotation.y = Math.PI / 2; playerMoved = true; }
+
+        krish.root.position.x = Math.max(-16.2, Math.min(16.2, krish.root.position.x));
+        krish.root.position.z = Math.max(-20.5, Math.min(24.0, krish.root.position.z));
+
+        if (playerMoved) krish.mode = 'walk';
+        else if (krish.mode === 'walk') krish.mode = 'idle';
+      }
+
+      if (!hasEnteredGym && krish.root.position.z < 5.5) {
+        hasEnteredGym = true;
+        playSfx('clank');
+        faceEachOther(shubham, krish);
+        playDialogueChain([{ char: shubham, title: "1. SHUBHAM TRAINER", bg: "#8b5cf6", fg: "#fff", pitch: 0.85, text: "सुबह-सुबह आ गया! (बात आगे बढ़ाने के लिए 1 दबाएं)" }]);
+      }
+
+      allCharacters.forEach((c, idx) => {
+        if (c.targetPos) {
+          const dx = c.targetPos.x - c.root.position.x;
+          const dz = c.targetPos.z - c.root.position.z;
+          const dist = Math.hypot(dx, dz);
+          if (dist > 0.35) {
+            c.root.position.x += (dx / dist) * 0.14;
+            c.root.position.z += (dz / dist) * 0.14;
+            c.root.rotation.y = Math.atan2(dx, dz);
+            c.mode = 'walk';
+          } else {
+            c.targetPos = null;
+            c.mode = 'idle';
+          }
+        }
+
+        const repWave = Math.sin(t * 5.2 + idx);
+        const repZeroToOne = (repWave + 1) * 0.5;
+
+        if (c.mode === 'walk') {
+          c.leftLeg.rotation.x = Math.sin(t * 13) * 0.65;
+          c.rightLeg.rotation.x = -Math.sin(t * 13) * 0.65;
+          c.leftArm.rotation.x = -Math.sin(t * 13) * 0.55;
+          c.rightArm.rotation.x = Math.sin(t * 13) * 0.55;
+        } else if (c.mode === 'flex') {
+          c.leftArm.rotation.z = 1.9 + Math.sin(t * 6) * 0.15;
+          c.rightArm.rotation.z = -1.9 - Math.sin(t * 6) * 0.15;
+          c.leftArm.rotation.x = -0.4; c.rightArm.rotation.x = -0.4;
+          c.root.rotation.y = Math.sin(t * 1.5) * 0.45;
+        } else if (c.mode === 'cheer') {
+          c.bodyPivot.position.y = Math.abs(Math.sin(t * 7 + idx)) * 0.35;
+          c.leftArm.rotation.x = -2.6 + Math.sin(t * 10 + idx) * 0.3;
+          c.rightArm.rotation.x = -2.6 - Math.sin(t * 10 + idx) * 0.3;
+        } else if (c.mode === 'bench') {
+          c.leftArm.rotation.x = -Math.PI / 2 + repZeroToOne * 0.55;
+          c.rightArm.rotation.x = -Math.PI / 2 + repZeroToOne * 0.55;
+          c.leftLeg.rotation.x = 0.4; c.rightLeg.rotation.x = 0.4;
+        } else if (c.mode === 'legpress') {
+          c.leftLeg.rotation.x = -1.25 + repZeroToOne * 0.65;
+          c.rightLeg.rotation.x = -1.25 + repZeroToOne * 0.65;
+          c.leftArm.rotation.x = -0.4; c.rightArm.rotation.x = -0.4;
+        } else if (c.mode === 'dumbbell') {
+          c.leftArm.rotation.x = -0.3 - repZeroToOne * 1.45;
+          c.rightArm.rotation.x = -1.75 + repZeroToOne * 1.45;
+        } else if (c.mode === 'latpull') {
+          c.leftArm.rotation.x = -2.5 + repZeroToOne * 1.1;
+          c.rightArm.rotation.x = -2.5 + repZeroToOne * 1.1;
+          c.leftLeg.rotation.x = -1.3; c.rightLeg.rotation.x = -1.3;
+        } else if (c.mode === 'squat') {
+          c.bodyPivot.position.y = -repZeroToOne * 0.65;
+          c.leftLeg.rotation.x = -repZeroToOne * 0.85;
+          c.rightLeg.rotation.x = -repZeroToOne * 0.85;
+          c.leftArm.rotation.x = -1.8; c.rightArm.rotation.x = -1.8;
+        } else {
+          c.leftLeg.rotation.x = 0; c.rightLeg.rotation.x = 0;
+          c.leftArm.rotation.z = 0; c.rightArm.rotation.z = 0;
+          if (currentSpeakerChar === c) {
+            c.leftArm.rotation.x = -0.6 + Math.sin(t * 14) * 0.35;
+            c.rightArm.rotation.x = -0.6 - Math.sin(t * 14) * 0.35;
+            c.head.rotation.y = Math.sin(t * 8) * 0.2;
+          } else {
+            c.leftArm.rotation.x = Math.sin(t * 2 + idx) * 0.06;
+            c.rightArm.rotation.x = -Math.sin(t * 2 + idx) * 0.06;
+            c.head.rotation.y = 0;
+          }
+        }
+      });
+
+      if (confettiGroup.visible) {
+        confettiParticles.forEach(p => {
+          p.mesh.position.y -= p.speedY;
+          p.mesh.rotation.x += p.rotSpeed;
+          p.mesh.rotation.y += p.rotSpeed;
+          if (p.mesh.position.y < 0.2) p.mesh.position.y = 12;
+        });
+      }
+
+      machines.forEach((m, idx) => {
+        const userOnMachine = allCharacters.find(c => c.mode === m.type && Math.hypot(c.root.position.x - m.x, c.root.position.z - m.z) < 2.5);
+        const charIdx = userOnMachine ? allCharacters.indexOf(userOnMachine) : idx;
+        const repZeroToOne = (Math.sin(t * 5.2 + charIdx) + 1) * 0.5;
+
+        if (m.type === 'bench') {
+          m.movingPart.position.y = userOnMachine ? (1.85 + repZeroToOne * 0.55) : m.baseY;
+        } else if (m.type === 'legpress') {
+          if (userOnMachine) {
+            m.movingPart.position.y = m.baseY + repZeroToOne * 0.52;
+            m.movingPart.position.z = m.baseZ - repZeroToOne * 0.52;
+          } else {
+            m.movingPart.position.y = m.baseY;
+            m.movingPart.position.z = m.baseZ;
+          }
+        } else if (m.type === 'latpull') {
+          if (userOnMachine) {
+            m.latBar.position.y = 3.2 - repZeroToOne * 0.85;
+            m.weightPlateStack.position.y = 1.2 + repZeroToOne * 0.85;
+          } else {
+            m.latBar.position.y = 3.2;
+            m.weightPlateStack.position.y = 1.2;
+          }
+        } else if (m.type === 'squat') {
+          m.movingPart.position.y = userOnMachine ? (m.baseY - repZeroToOne * 0.65) : m.baseY;
+        }
+      });
+
+      const targetCamX = isGameCompleted ? Math.sin(t * 0.5) * 3.5 : krish.root.position.x * 0.85;
+      const targetCamZ = isGameCompleted ? 4.5 : krish.root.position.z + 11.5;
+      camera.position.x += (targetCamX - camera.position.x) * 0.08;
+      camera.position.z += (targetCamZ - camera.position.z) * 0.08;
+      camera.position.y = isGameCompleted ? 5.2 : 7.2;
+      camera.lookAt(krish.root.position.x, 2.3, krish.root.position.z - 2.5);
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+  </script>
+</body>
+</html>
